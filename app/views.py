@@ -181,7 +181,30 @@ def analytics():
         'last_24h_per_hour': last_24h_per_hour,
     }
 
+    # per-spider statistics: total, avg/hr (based on min/max created_at per source), last 24h counts
+    try:
+        src_rows = db.session.query(Article.source, func.count(Article.id), func.min(Article.created_at), func.max(Article.created_at)).group_by(Article.source).all()
+        per_spider_stats = {}
+        from datetime import timedelta
+        since = datetime.utcnow() - timedelta(days=1)
+        for source, cnt, min_c, max_c in src_rows:
+            name = source or 'unknown'
+            if min_c and max_c and max_c > min_c:
+                hrs = (max_c - min_c).total_seconds() / 3600.0
+            else:
+                hrs = 1.0
+            avg = cnt / max(1.0, hrs)
+            last_24h_cnt = db.session.query(func.count(Article.id)).filter(Article.source == source, Article.created_at >= since).scalar() or 0
+            per_spider_stats[name] = {
+                'total': cnt,
+                'avg_per_hour': avg,
+                'last_24h': last_24h_cnt,
+                'last_24h_per_hour': last_24h_cnt / 24.0,
+            }
+    except Exception:
+        per_spider_stats = {}
+
     return render_template('analytics.html', total_articles=total_articles, per_source=per_source,
                            job_counts=job_counts, recent_jobs=recent_jobs, recent_articles=recent_articles,
                            source_labels=source_labels, source_counts=source_counts,
-                           scraping_stats=scraping_stats)
+                           scraping_stats=scraping_stats, per_spider_stats=per_spider_stats)
