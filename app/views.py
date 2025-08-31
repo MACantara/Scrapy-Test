@@ -62,26 +62,50 @@ def scrape():
             flash("Unknown site", "danger")
             return redirect(url_for("main.index"))
 
-        # create a ScrapeJob row to track the background run
-        job = ScrapeJob(spider="all" if run_all else site, status="running")
-        db.session.add(job)
-        db.session.commit()
+        # If run_all is requested, start one background process per scraper
+        # so they run in parallel. Create a ScrapeJob per scraper for tracking.
+        started = 0
+        if run_all:
+            for name in SCRAPERS:
+                job = ScrapeJob(spider=name, status="running")
+                db.session.add(job)
+                db.session.commit()
 
-        cmd = [
-            sys.executable,
-            "-m",
-            "scrapy_spiders.runner",
-            "all" if run_all else site,
-            "--pages",
-            str(pages if pages is not None else 0),
-            "--limit",
-            str(limit),
-            "--job-id",
-            str(job.id),
-        ]
-        # Windows: start background process without waiting
-        subprocess.Popen(cmd, shell=False)
-        flash("Scrapy job started in background", "info")
+                cmd = [
+                    sys.executable,
+                    "-m",
+                    "scrapy_spiders.runner",
+                    name,
+                    "--pages",
+                    str(pages if pages is not None else 0),
+                    "--limit",
+                    str(limit),
+                    "--job-id",
+                    str(job.id),
+                ]
+                subprocess.Popen(cmd, shell=False)
+                started += 1
+            flash(f"Started {started} Scrapy jobs in background", "info")
+        else:
+            # single-site run: create one job and start one process
+            job = ScrapeJob(spider=site, status="running")
+            db.session.add(job)
+            db.session.commit()
+
+            cmd = [
+                sys.executable,
+                "-m",
+                "scrapy_spiders.runner",
+                site,
+                "--pages",
+                str(pages if pages is not None else 0),
+                "--limit",
+                str(limit),
+                "--job-id",
+                str(job.id),
+            ]
+            subprocess.Popen(cmd, shell=False)
+            flash("Scrapy job started in background", "info")
         return redirect(url_for("main.index"))
     return render_template("scrape.html", sites=list(SCRAPERS))
 
