@@ -30,6 +30,25 @@
     </div>
   </div>
 
+  <div class="grid md:grid-cols-3 gap-4 mb-6">
+    <div class="p-4 bg-gray-50 rounded">
+      <div class="text-sm text-gray-600">Scraping speed (avg)</div>
+      <div class="text-2xl font-bold">{{ scraping_stats.avg_per_hour|round(2) }} / hour</div>
+      <div class="text-sm text-gray-500">Overall average since first article</div>
+    </div>
+
+    <div class="p-4 bg-gray-50 rounded">
+      <div class="text-sm text-gray-600">Last 24 hours</div>
+      <div class="text-2xl font-bold">{{ scraping_stats.last_24h }} articles</div>
+      <div class="text-sm text-gray-500">~{{ scraping_stats.last_24h_per_hour|round(2) }} / hour</div>
+    </div>
+
+    <div class="p-4 bg-gray-50 rounded">
+      <div class="text-sm text-gray-600">Note</div>
+      <div class="text-sm text-gray-500">Rates are based on Article.created_at timestamps and may be affected by import/migration.</div>
+    </div>
+  </div>
+
   <div class="mb-6">
     <h2 class="font-semibold mb-2">Articles by source</h2>
     <div class="p-4 bg-white rounded shadow">

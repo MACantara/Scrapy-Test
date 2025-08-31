@@ -158,6 +158,30 @@ def analytics():
     source_labels = [s or 'unknown' for s, c in per_source]
     source_counts = [c for s, c in per_source]
 
+    # scraping speed: compute overall average articles/hour and recent 24h rate
+    try:
+        min_created, max_created = db.session.query(func.min(Article.created_at), func.max(Article.created_at)).one()
+        if min_created and max_created and max_created > min_created:
+            hours = (max_created - min_created).total_seconds() / 3600.0
+        else:
+            hours = 1.0
+        avg_per_hour = total_articles / max(1.0, hours)
+        from datetime import timedelta
+        since = datetime.utcnow() - timedelta(days=1)
+        last_24h = Article.query.filter(Article.created_at >= since).count()
+        last_24h_per_hour = last_24h / 24.0
+    except Exception:
+        avg_per_hour = 0.0
+        last_24h = 0
+        last_24h_per_hour = 0.0
+
+    scraping_stats = {
+        'avg_per_hour': avg_per_hour,
+        'last_24h': last_24h,
+        'last_24h_per_hour': last_24h_per_hour,
+    }
+
     return render_template('analytics.html', total_articles=total_articles, per_source=per_source,
                            job_counts=job_counts, recent_jobs=recent_jobs, recent_articles=recent_articles,
-                           source_labels=source_labels, source_counts=source_counts)
+                           source_labels=source_labels, source_counts=source_counts,
+                           scraping_stats=scraping_stats)
