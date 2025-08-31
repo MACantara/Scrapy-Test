@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Home - Scraper Demo{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <form method="get" action="/" class="flex gap-2">
+    <input name="q" value="{{ q or '' }}" placeholder="Search title or content" class="border rounded p-2" />
+    <button class="bg-blue-600 text-white px-3 py-2 rounded">Search</button>
+  </form>
+  <div>
+    <a href="/scrape" class="bg-gray-200 px-3 py-2 rounded">Run Scraper</a>
+  </div>
+</div>
+
+<div class="grid gap-4">
+  {% for a in articles %}
+  <article class="bg-white p-4 rounded shadow">
+    <div class="flex justify-between items-start">
+      <h2 class="font-semibold text-lg"><a href="{{ a.url }}" target="_blank" class="text-blue-700">{{ a.title or '(no title)' }}</a></h2>
+      <div class="text-sm text-gray-500">{{ a.source }} • {{ a.date or a.created_at }}</div>
+    </div>
+    <p class="text-sm text-gray-700 mt-2">{{ a.description or (a.content[:200] + '...') }}</p>
+  </article>
+  {% else %}
+  <div class="p-4 bg-white rounded shadow">No articles yet. Run the scraper.</div>
+  {% endfor %}
+</div>
+
+<div class="mt-6">
+  {% if pagination.pages > 1 %}
+    <div class="flex gap-2">
+      {% if pagination.has_prev %}
+        <a class="px-3 py-1 bg-white rounded" href="?page={{ pagination.prev_num }}{% if q %}&q={{ q }}{% endif %}">Prev</a>
+      {% endif %}
+      <span class="px-3 py-1 bg-white rounded">Page {{ pagination.page }} / {{ pagination.pages }}</span>
+      {% if pagination.has_next %}
+        <a class="px-3 py-1 bg-white rounded" href="?page={{ pagination.next_num }}{% if q %}&q={{ q }}{% endif %}">Next</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}

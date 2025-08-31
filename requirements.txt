@@ -1,0 +1,8 @@
+Flask
+requests
+beautifulsoup4
+SQLAlchemy
+lxml
+python-dotenv
+Flask-SQLAlchemy
+Scrapy
