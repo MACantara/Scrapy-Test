@@ -45,7 +45,7 @@ def main():
         "ITEM_PIPELINES": {
             "scrapy_spiders.pipelines.SQLAlchemyPipeline": 300,
         },
-        "CONCURRENT_REQUESTS": 8,
+        "CONCURRENT_REQUESTS": 16,
         "ROBOTSTXT_OBEY": True,
         "DOWNLOAD_DELAY": 0.5,
     }
