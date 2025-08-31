@@ -20,7 +20,19 @@ def index():
     query = Article.query
     if q:
         query = query.filter(Article.title.ilike(f"%{q}%") | Article.content.ilike(f"%{q}%"))
-    items = query.order_by(Article.date.desc().nullslast(), Article.created_at.desc()).paginate(page=page, per_page=per, error_out=False)
+    # Some SQL dialects (MySQL) don't support NULLS LAST. Emit a dialect-aware
+    # ordering: for MySQL, order by IS NULL (so non-null first) then date desc.
+    dialect = None
+    try:
+        dialect = db.engine.dialect.name
+    except Exception:
+        pass
+
+    if dialect == 'mysql':
+        # (Article.date IS NULL) ASC -> non-null (0) before null (1)
+        items = query.order_by(Article.date.is_(None).asc(), Article.date.desc(), Article.created_at.desc()).paginate(page=page, per_page=per, error_out=False)
+    else:
+        items = query.order_by(Article.date.desc().nullslast(), Article.created_at.desc()).paginate(page=page, per_page=per, error_out=False)
     # flash any finished, unnotified scrape jobs
     from .models import ScrapeJob
     jobs = ScrapeJob.query.filter_by(status="finished", notified=False).all()
