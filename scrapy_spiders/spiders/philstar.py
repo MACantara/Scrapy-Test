@@ -1,6 +1,6 @@
 import scrapy
 from scrapers.philstar import PhilstarScraper
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 from scrapy_spiders.db import url_exists
 from scrapy_spiders.db import preload_existing_urls
 
@@ -45,10 +45,22 @@ class PhilstarSpider(scrapy.Spider):
 
     def parse_listing(self, response):
         html = response.text
+        EXCLUDE_SECTIONS = ("/other-sections/", "/forex-stocks/", "/lotto-results/")
         for link in self.scraper.parse_listing(html):
+            # filter out non-article sections by path
+            try:
+                p = urlparse(link)
+                path = p.path or ""
+            except Exception:
+                path = ""
+
+            if any(ex in path for ex in EXCLUDE_SECTIONS):
+                continue
+
             # skip scheduling if URL already exists in DB
             if url_exists(link):
                 continue
+
             yield scrapy.Request(link, callback=self.parse_article)
 
     def parse_article(self, response):
