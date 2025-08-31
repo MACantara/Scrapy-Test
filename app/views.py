@@ -4,6 +4,7 @@ from .db import db
 from datetime import datetime
 from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
 import sys
+from sqlalchemy import func
 
 main_bp = Blueprint("main", __name__)
 
@@ -33,7 +34,10 @@ def index():
         except Exception:
             db.session.rollback()
 
-    return render_template("index.html", articles=items.items, pagination=items, q=q)
+    # also collect currently running jobs to show progress on the UI
+    running_jobs = ScrapeJob.query.filter_by(status="running").all()
+
+    return render_template("index.html", articles=items.items, pagination=items, q=q, running_jobs=running_jobs)
 
 @main_bp.route("/scrape", methods=[GET, POST] if False else ["GET", "POST"]) 
 @main_bp.route("/scrape", methods=["GET", "POST"]) 
@@ -113,3 +117,35 @@ def scrape():
 def api_articles():
     articles = Article.query.order_by(Article.created_at.desc()).limit(100).all()
     return jsonify([a.to_dict() for a in articles])
+
+
+@main_bp.route("/api/jobs")
+def api_jobs():
+    # return currently running scrape jobs for frontend polling
+    jobs = ScrapeJob.query.filter_by(status="running").all()
+    return jsonify([j.to_dict() for j in jobs])
+
+
+@main_bp.route("/analytics")
+def analytics():
+    # Basic analytics dashboard using Article and ScrapeJob models
+    total_articles = Article.query.count()
+    # articles per source
+    per_source = db.session.query(Article.source, func.count(Article.id)).group_by(Article.source).all()
+
+    job_counts = {
+        'running': ScrapeJob.query.filter_by(status='running').count(),
+        'finished': ScrapeJob.query.filter_by(status='finished').count(),
+        'total': ScrapeJob.query.count(),
+    }
+
+    recent_jobs = ScrapeJob.query.order_by(ScrapeJob.started_at.desc()).limit(10).all()
+    recent_articles = Article.query.order_by(Article.created_at.desc()).limit(10).all()
+
+    # prepare JSON-friendly lists for charts
+    source_labels = [s or 'unknown' for s, c in per_source]
+    source_counts = [c for s, c in per_source]
+
+    return render_template('analytics.html', total_articles=total_articles, per_source=per_source,
+                           job_counts=job_counts, recent_jobs=recent_jobs, recent_articles=recent_articles,
+                           source_labels=source_labels, source_counts=source_counts)

@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}Analytics{% endblock %}
+{% block content %}
+<div class="bg-white p-6 rounded shadow">
+  <h1 class="text-xl font-semibold mb-4">Analytics</h1>
+  <div class="grid md:grid-cols-3 gap-4 mb-6">
+    <div class="p-4 bg-gray-50 rounded flex flex-col justify-between">
+      <div class="flex items-center gap-3">
+        <i class="bi bi-file-earmark-text text-2xl text-blue-600"></i>
+        <div>
+          <div class="text-sm text-gray-600">Total articles</div>
+          <div class="text-2xl font-bold">{{ total_articles }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-4 bg-gray-50 rounded flex flex-col justify-between">
+      <div class="flex items-center gap-3">
+        <i class="bi bi-gear-wide-connected text-2xl text-green-600"></i>
+        <div>
+          <div class="text-sm text-gray-600">Scrape jobs</div>
+          <div class="text-lg">Running: <span class="font-medium">{{ job_counts.running }}</span> &middot; Finished: <span class="font-medium">{{ job_counts.finished }}</span></div>
+          <div class="text-sm text-gray-500">Total: {{ job_counts.total }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-4 bg-gray-50 rounded">
+      <canvas id="jobsChart" height="120"></canvas>
+    </div>
+  </div>
+
+  <div class="mb-6">
+    <h2 class="font-semibold mb-2">Articles by source</h2>
+    <div class="p-4 bg-white rounded shadow">
+      <canvas id="sourceChart" height="100"></canvas>
+    </div>
+  </div>
+
+  <div class="grid md:grid-cols-2 gap-4">
+    <div class="p-4 bg-white rounded shadow">
+      <h3 class="font-semibold mb-3"><i class="bi bi-list-check mr-2"></i>Recent Jobs</h3>
+      <ul class="space-y-2">
+        {% for j in recent_jobs %}
+          <li class="flex justify-between items-center">
+            <div>
+              <div class="font-medium">Job {{ j.id }} &middot; {{ j.spider }}</div>
+              <div class="text-sm text-gray-500">Started: {{ j.started_at }}{% if j.finished_at %} • Finished: {{ j.finished_at }}{% endif %}</div>
+            </div>
+            <div class="text-right">
+              <div class="text-sm">{{ j.status|capitalize }}</div>
+              <div class="text-sm font-medium">{{ j.items_count or 0 }} items</div>
+            </div>
+          </li>
+        {% else %}
+          <li>No jobs yet</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="p-4 bg-white rounded shadow">
+      <h3 class="font-semibold mb-3"><i class="bi bi-newspaper mr-2"></i>Recent Articles</h3>
+      <ul class="space-y-2">
+        {% for a in recent_articles %}
+          <li>
+            <a href="{{ a.url }}" target="_blank" class="font-medium text-blue-700">{{ a.title or a.url }}</a>
+            <div class="text-sm text-gray-500">{{ a.source }} • {{ a.created_at }}</div>
+          </li>
+        {% else %}
+          <li>No articles yet</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+  const perSource = {{ source_counts|tojson }};
+  const sourceLabels = {{ source_labels|tojson }};
+
+    const ctx = document.getElementById('sourceChart');
+    if (ctx) {
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: sourceLabels,
+          datasets: [{
+            label: 'Articles',
+            data: perSource,
+            backgroundColor: sourceLabels.map((_, i) => `hsl(${(i*50)%360} 70% 60%)`),
+          }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+      });
+    }
+
+  const jobCounts = {{ job_counts|tojson }};
+    const jctx = document.getElementById('jobsChart');
+    if (jctx) {
+      new Chart(jctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Running','Finished'],
+          datasets: [{
+            data: [jobCounts.running, jobCounts.finished],
+            backgroundColor: ['#10B981', '#3B82F6']
+          }]
+        },
+        options: { responsive: true }
+      });
+    }
+  </script>
+{% endblock %}
