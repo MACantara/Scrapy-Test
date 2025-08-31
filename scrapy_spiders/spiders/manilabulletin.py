@@ -28,7 +28,6 @@ class ManilaBulletinSpider(scrapy.Spider):
             "https://mb.com.ph/category/philippines",
             "https://mb.com.ph/category/world",
             "https://mb.com.ph/category/business",
-            "https://mb.com.ph/category/opinion",
             "https://mb.com.ph/category/lifestyle",
             "https://mb.com.ph/category/entertainment",
             "https://mb.com.ph/category/sports",
