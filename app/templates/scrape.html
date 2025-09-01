@@ -129,3 +129,28 @@
 </div>
 
 {% endblock %}
+
+{% block scripts %}
+<script>
+  // Toggle visibility/required state of site selector when Run all is checked
+  (function(){
+    const runAllCheckbox = document.getElementById('run_all');
+    const siteSelect = document.getElementById('site');
+    function updateSiteVisibility(){
+      if (!runAllCheckbox || !siteSelect) return;
+      if (runAllCheckbox.checked) {
+        siteSelect.closest('div').style.display = 'none';
+        siteSelect.required = false;
+        siteSelect.setAttribute('aria-hidden', 'true');
+      } else {
+        siteSelect.closest('div').style.display = '';
+        siteSelect.required = true;
+        siteSelect.removeAttribute('aria-hidden');
+      }
+    }
+    runAllCheckbox.addEventListener('change', updateSiteVisibility);
+    // initialize on load
+    updateSiteVisibility();
+  })();
+</script>
+{% endblock %}

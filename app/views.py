@@ -66,15 +66,20 @@ def scrape():
         run_all = bool(request.form.get("run_all"))
         use_scrapy = bool(request.form.get("use_scrapy"))
 
-        if site not in SCRAPERS:
+        # If run_all is requested we won't require a specific site value.
+        if not run_all and site not in SCRAPERS:
             flash("Unknown site", "danger")
             return redirect(url_for("main.index"))
-    # We now use the Scrapy-based runner exclusively. Start it as a
-    # background process so the web request returns immediately.
+        # We now use the Scrapy-based runner exclusively. Start it as a
+        # background process so the web request returns immediately.
 
         # Always use Scrapy runner
         import subprocess
-        if site != "all" and site not in SCRAPERS:
+        # If run_all is requested the form may omit or hide the `site` field;
+        # treat that case as if the requested site is 'all' and skip validation.
+        if run_all:
+            site = "all"
+        elif site != "all" and site not in SCRAPERS:
             flash("Unknown site", "danger")
             return redirect(url_for("main.index"))
 
