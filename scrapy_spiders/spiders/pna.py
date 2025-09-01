@@ -62,4 +62,39 @@ class PNASpider(scrapy.Spider):
 
     def parse_article(self, response):
         data = self.scraper.parse_article(response.text, response.url)
+        # Clean author field: remove trailing dates and sharing UI text
+        try:
+            author = data.get('author') if isinstance(data, dict) else None
+            if author and isinstance(author, str):
+                s = author.strip()
+                # normalize nbsp
+                s = s.replace('\u00a0', ' ')
+                # drop leading 'By '
+                if s.lower().startswith('by '):
+                    s = s[3:].strip()
+
+                lower = s.lower()
+                months = [
+                    'january', 'february', 'march', 'april', 'may', 'june',
+                    'july', 'august', 'september', 'october', 'november', 'december'
+                ]
+                markers = ['share', 'x (formerly', 'viber', 'email'] + months
+                # find earliest marker occurrence
+                idxs = [lower.find(m) for m in markers if lower.find(m) != -1]
+                if idxs:
+                    cut = min(idxs)
+                    s = s[:cut].strip(' ,;-–—')
+
+                # final safety: if the remaining string still contains a 4-digit year,
+                # cut at the first digit occurrence
+                import re
+                m = re.search(r"\d{4}", s)
+                if m:
+                    s = s[:m.start()].strip(' ,;')
+
+                data['author'] = s or None
+        except Exception:
+            # non-fatal: keep original author if cleanup fails
+            pass
+
         yield data
