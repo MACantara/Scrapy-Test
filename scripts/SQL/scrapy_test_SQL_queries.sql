@@ -6,6 +6,7 @@ SELECT * FROM scrape_job;
 
 UPDATE scrape_job SET status = 'finished', finished_at = NOW() WHERE status = 'running';
 UPDATE scrape_job SET status = 'finished', finished_at = NOW(), notified = 1 WHERE status = 'running' AND items_count = 0;
+UPDATE scrape_job SET status = 'finished', finished_at = NOW(), notified = 1 WHERE status = 'running' OR items_count = 0;
 
 SELECT COUNT(*) FROM article;
 
