@@ -74,7 +74,38 @@ def main():
         # when the runner actually runs; don't mask unrelated problems.
         pass
 
-    process.start()
+    # Start crawling. Capture exceptions so we can mark the ScrapeJob as failed
+    success = True
+    try:
+        process.start()
+    except Exception as exc:
+        success = False
+        print(f"Scrapy runner encountered an error: {exc}", file=sys.stderr)
+
+    # If a job id was provided, update the ScrapeJob status in the Flask DB
+    if args.job_id:
+        try:
+            # Import app factory and models here to avoid importing Flask when not needed
+            from app import create_app
+            from app.db import db
+            from app.models import ScrapeJob
+            from datetime import datetime
+
+            app = create_app()
+            with app.app_context():
+                job = ScrapeJob.query.get(args.job_id)
+                if job:
+                    job.status = 'finished' if success else 'failed'
+                    job.finished_at = datetime.utcnow()
+                    # Mark as notified by default; adjust if you have other notification logic
+                    try:
+                        job.notified = 1
+                    except Exception:
+                        # If the model doesn't have 'notified', ignore
+                        pass
+                    db.session.commit()
+        except Exception as exc:
+            print(f"Warning: failed to update ScrapeJob {args.job_id}: {exc}", file=sys.stderr)
 
 
 if __name__ == "__main__":
