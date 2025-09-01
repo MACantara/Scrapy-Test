@@ -30,7 +30,7 @@ async def _wait_for_any_selector(page, selectors, timeout=5000):
 class ManilaBulletinSpider(scrapy.Spider):
     name = "manilabulletin"
     LISTING_URL = "https://mb.com.ph/"
-    DEFAULT_MAX_PAGES = 10000
+    DEFAULT_MAX_PAGES = 100
 
     def __init__(self, pages=2, limit=0, *args, **kwargs):
         super().__init__(*args, **kwargs)
