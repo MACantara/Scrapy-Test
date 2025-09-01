@@ -72,7 +72,11 @@ class ManilaBulletinSpider(scrapy.Spider):
 
         # categories
         categories = [
-            "https://mb.com.ph/category/philippines",
+            "https://mb.com.ph/category/national",
+            "https://mb.com.ph/category/metro-manila",
+            "https://mb.com.ph/category/luzon",
+            "https://mb.com.ph/category/visayas",
+            "https://mb.com.ph/category/mindanao",
             "https://mb.com.ph/category/world",
             "https://mb.com.ph/category/business",
             "https://mb.com.ph/category/lifestyle",
