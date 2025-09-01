@@ -11,16 +11,58 @@ SELECT COUNT(*) FROM article;
 
 SELECT * FROM article ORDER BY id DESC;
 
--- Preview cleaned author values (no write)
-SELECT id, author AS raw_author,
-  TRIM(
-    REGEXP_REPLACE(
-      REPLACE(author, CHAR(160), ' '),
-      '^\s*(?:by\s+)?(.+?)(?:\s+(?:share|x \(formerly|viber|email|january|february|march|april|may|june|july|august|september|october|november|december)\b).*|\s+\d{4}.*$',
-      '\\1',
-      1, 0, 'i'
-    )
+-- Preview cleaned author values for PNA (no writes)
+SELECT
+  id,
+  author AS raw_author,
+  NULLIF(
+    TRIM(
+      REGEXP_REPLACE(
+        REGEXP_REPLACE(
+          REGEXP_REPLACE(
+            CONVERT(REPLACE(CONVERT(author USING latin1), CHAR(160), ' ') USING utf8mb4),
+            '^\\s*by\\s+',
+            '',
+            1, 0, 'i'
+          ),
+          '\\s+(January|February|March|April|May|June|July|August|September|October|November|December)\\s+\\d{1,2},\\s*\\d{4}(?:,\\s*\\d{1,2}:\\d{2}\\s*(?:am|pm))?',
+          '',
+          1, 0, 'i'
+        ),
+        '\\s+(share|x \\(formerly|viber|email)\\b.*$',
+        '',
+        1, 0, 'i'
+      )
+    ),
+    ''
   ) AS clean_author
 FROM article
 WHERE author IS NOT NULL
+  AND source = 'pna'
 LIMIT 50;
+
+-- Apply cleanup to articles from PNA (MySQL 8+)
+UPDATE article
+SET author = NULLIF(
+  TRIM(
+    REGEXP_REPLACE(
+      REGEXP_REPLACE(
+        REGEXP_REPLACE(
+          CONVERT(REPLACE(CONVERT(author USING latin1), CHAR(160), ' ') USING utf8mb4),
+          '^\\s*by\\s+',
+          '',
+          1, 0, 'i'
+        ),
+        '\\s+(January|February|March|April|May|June|July|August|September|October|November|December)\\s+\\d{1,2},\\s*\\d{4}(?:,\\s*\\d{1,2}:\\d{2}\\s*(?:am|pm))?',
+        '',
+        1, 0, 'i'
+      ),
+      '\\s+(share|x \\(formerly|viber|email)\\b.*$',
+      '',
+      1, 0, 'i'
+    )
+  ),
+  ''
+)
+WHERE author IS NOT NULL
+  AND source = 'pna';
