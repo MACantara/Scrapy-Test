@@ -1,6 +1,5 @@
 SHOW TABLES;
 
-
 SELECT * FROM article;
 SELECT * FROM scrape_job;	
 
