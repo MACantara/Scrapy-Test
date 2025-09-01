@@ -15,6 +15,7 @@ from urllib.parse import urljoin
 from scrapy_spiders.db import url_exists, preload_existing_urls
 from bs4 import BeautifulSoup
 from datetime import datetime
+import re
 
 
 async def _wait_for_any_selector(page, selectors, timeout=5000):
@@ -205,7 +206,7 @@ class ManilaBulletinSpider(scrapy.Spider):
         if not author:
             author = 'Unknown'
 
-        # Date: time tag, og meta, or text
+        # Date: produce ISO 8601 datetime string where possible
         published_date = None
         date_str = None
         time_tag = soup.find('time')
@@ -216,20 +217,50 @@ class ManilaBulletinSpider(scrapy.Spider):
             if meta_dt and meta_dt.get('content'):
                 date_str = meta_dt['content']
         if not date_str:
+            # some articles use a span.issue_date containing text like
+            # "Published Sep 1, 2025 12:16 pm" — prefer that first
+            issue_span = soup.find('span', class_='issue_date')
+            if issue_span and issue_span.get_text(strip=True):
+                # strip leading 'Published' and similar prefixes
+                raw = issue_span.get_text(separator=' ', strip=True)
+                date_str = re.sub(r'(?i)^\s*published[:\s\u00A0]*', '', raw).strip()
+        if not date_str:
             span_date = soup.find('span', class_='date')
             if span_date:
                 date_str = span_date.get_text(strip=True)
+
         if date_str:
             try:
-                if 'T' in date_str:
-                    published_date = datetime.fromisoformat(date_str.replace('Z', '+00:00')).date()
-                else:
-                    for fmt in ('%B %d, %Y', '%b %d, %Y', '%Y/%m/%d', '%Y-%m-%d'):
+                dt = None
+                # ISO-like strings
+                if 'T' in date_str or re.search(r"\d{4}-\d{2}-\d{2}", date_str):
+                    # support Z timezone by normalizing to +00:00 for fromisoformat
+                    try:
+                        dt = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+                    except Exception:
+                        dt = None
+
+                if dt is None:
+                    # Try a few common human-readable formats, including ones
+                    # with time of day like "Sep 1, 2025 12:16 pm".
+                    fmts = (
+                        '%B %d, %Y %I:%M %p',
+                        '%b %d, %Y %I:%M %p',
+                        '%B %d, %Y',
+                        '%b %d, %Y',
+                        '%Y/%m/%d',
+                        '%Y-%m-%d',
+                    )
+                    for fmt in fmts:
                         try:
-                            published_date = datetime.strptime(date_str, fmt).date()
+                            dt = datetime.strptime(date_str, fmt)
                             break
                         except Exception:
                             continue
+
+                if dt:
+                    # Convert to ISO 8601 string; keep tz if present else naive ISO
+                    published_date = dt.isoformat()
             except Exception:
                 published_date = None
         
@@ -238,6 +269,6 @@ class ManilaBulletinSpider(scrapy.Spider):
             'url': response.url,
             'content': content,
             'author': author,
-            'published_date': published_date,
+            'date': published_date,
             'source': 'Manila Bulletin'
         }

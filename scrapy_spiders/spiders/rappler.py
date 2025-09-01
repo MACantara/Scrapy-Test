@@ -84,6 +84,7 @@ class RapplerSpider(scrapy.Spider):
             'url': response.url,
             'content': content,
             'author': author,
+            'date': published_date,
             'published_date': published_date,
             'source': 'Rappler'
         }
