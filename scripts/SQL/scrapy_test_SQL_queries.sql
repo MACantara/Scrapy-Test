@@ -69,6 +69,7 @@ WHERE author IS NOT NULL
   AND source = 'pna';
   
 -- Manila Bulletin Debugging
-SELECT * FROM article WHERE source = "manilabulletin" ORDER BY id DESC;
-SELECT COUNT(*) FROM article WHERE source = "manilabulletin";
-SELECT * FROM article WHERE url = "https://mb.com.ph/2025/09/01/eo-creating-independent-commission-to-probe-dpwh-anomalies-being-finalizedpbbm";
+SELECT * FROM article WHERE source = "manilabulletin" or source = "Manila Bulletin" ORDER BY id DESC;
+SELECT COUNT(*) FROM article WHERE source = "manilabulletin" OR source = "Manila Bulletin";
+SELECT * FROM article WHERE url = "https://mb.com.ph/2025/09/01/pdeg-p605-m-worth-of-shabu-seized-in-zamboanga-city-3-arrested";
+DELETE FROM article WHERE source = "manilabulletin" OR source = "Manila Bulletin";
