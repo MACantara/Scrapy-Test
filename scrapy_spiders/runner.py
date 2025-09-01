@@ -64,7 +64,7 @@ def main():
         },
         "CONCURRENT_REQUESTS": 16,
         "ROBOTSTXT_OBEY": True,
-        "DOWNLOAD_DELAY": 0.5,
+        "DOWNLOAD_DELAY": 2,
         # scrapy-playwright integration
         "TWISTED_REACTOR": "twisted.internet.asyncioreactor.AsyncioSelectorReactor",
         "DOWNLOAD_HANDLERS": {
