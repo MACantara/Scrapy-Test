@@ -180,9 +180,46 @@ class PhilstarSpider(scrapy.Spider):
         if not content:
             content = "No content"
         
-        # Get author
-        author_tag = soup.find('span', class_='author') or soup.find('div', class_='byline')
-        author = author_tag.get_text(strip=True) if author_tag else "Unknown"
+        # Get author — prefer JSON-LD, then the article credits block, then fallbacks
+        author = None
+        try:
+            import json
+            ld = soup.find('script', type='application/ld+json')
+            if ld:
+                data = json.loads(ld.string)
+                entry = None
+                if isinstance(data, list):
+                    for e in data:
+                        if e.get('@type') in ('NewsArticle', 'Article'):
+                            entry = e
+                            break
+                elif isinstance(data, dict) and data.get('@type') in ('NewsArticle', 'Article'):
+                    entry = data
+
+                if entry:
+                    a = entry.get('author')
+                    if isinstance(a, dict):
+                        author = a.get('name')
+                    elif isinstance(a, list) and a:
+                        first = a[0]
+                        author = first.get('name') if isinstance(first, dict) else (first if isinstance(first, str) else None)
+                    elif isinstance(a, str):
+                        author = a
+        except Exception:
+            author = author
+
+        if not author:
+            credits = soup.find(id='sports_article_credits') or soup.find('div', class_='article__credits')
+            if credits:
+                # The author is usually the first <a> inside the credits block
+                a = credits.find('a', href=True)
+                if a and a.get_text(strip=True):
+                    author = a.get_text(strip=True)
+
+        if not author:
+            # previous fallbacks
+            author_tag = soup.find('span', class_='author') or soup.find('div', class_='byline')
+            author = author_tag.get_text(strip=True) if author_tag else "Unknown"
         
         # Get date — prefer JSON-LD or the article__date-published text
         published_date = None
