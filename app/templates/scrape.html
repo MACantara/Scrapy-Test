@@ -1,31 +1,131 @@
 {% extends 'base.html' %}
-{% block title %}Run Scraper{% endblock %}
+{% block title %}Run Scraper - PH News Scraper{% endblock %}
 {% block content %}
-  <div class="bg-white p-6 rounded shadow">
-    <h1 class="text-xl font-semibold mb-4">Run Scraper</h1>
-    <form method="post">
-      <div class="mb-4">
-        <label class="block mb-1">Site</label>
-        <select name="site" class="border p-2 rounded w-full">
+
+<div class="max-w-2xl mx-auto">
+  <!-- Page Header -->
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-neutral-900 mb-2">Run News Scraper</h1>
+    <p class="text-lg text-neutral-700">Configure and start a new scraping job to collect the latest news articles</p>
+  </div>
+
+  <!-- Scraper Form -->
+  <div class="bg-white rounded-lg border border-neutral-200 shadow-sm">
+    <div class="p-6 border-b border-neutral-200">
+      <h2 class="text-xl font-semibold text-neutral-900">Scraper Configuration</h2>
+    </div>
+    
+    <form method="post" class="p-6 space-y-6" novalidate>
+      <!-- Site Selection -->
+      <div>
+        <label for="site" class="block text-sm font-medium text-neutral-900 mb-2">
+          News Source
+          <span class="text-error-800" aria-label="required">*</span>
+        </label>
+        <select 
+          id="site"
+          name="site" 
+          required
+          aria-describedby="site-help"
+          class="w-full px-4 py-3 border-2 border-neutral-300 rounded-lg text-neutral-900 focus:border-primary-700 focus:ring-0">
+          <option value="">Choose a news source...</option>
           {% for s in sites %}
-            <option value="{{ s }}">{{ s }}</option>
+            <option value="{{ s }}">{{ s|title }}</option>
           {% endfor %}
         </select>
+        <p id="site-help" class="mt-2 text-sm text-neutral-600">
+          Select which news website to scrape for articles
+        </p>
       </div>
-      <div class="mb-4">
-        <label class="block mb-1">Pages to fetch (leave empty for unlimited; enter 0 for Scrapy unlimited)</label>
-        <input name="pages" value="2" type="number" min="0" class="border p-2 rounded w-24" />
-      </div>
-  <!-- Scrapy runner is always used now -->
-      <div class="mb-4">
-        <label class="inline-flex items-center">
-          <input type="checkbox" name="run_all" class="mr-2" />
-          <span>Run all scrapers in parallel</span>
-        </label>
-      </div>
+      
+      <!-- Pages Configuration -->
       <div>
-        <button class="bg-blue-600 text-white px-4 py-2 rounded">Start</button>
+        <label for="pages" class="block text-sm font-medium text-neutral-900 mb-2">
+          Pages to Fetch
+        </label>
+        <input 
+          id="pages"
+          name="pages" 
+          value="2" 
+          type="number" 
+          min="0" 
+          max="50"
+          aria-describedby="pages-help"
+          class="w-full px-4 py-3 border-2 border-neutral-300 rounded-lg text-neutral-900 focus:border-primary-700 focus:ring-0" 
+        />
+        <p id="pages-help" class="mt-2 text-sm text-neutral-600">
+          Number of listing pages to scrape (0 = unlimited, recommended: 2-10 for testing)
+        </p>
+      </div>
+      
+      <!-- Run All Option -->
+      <div class="bg-neutral-50 rounded-lg p-4">
+        <div class="flex items-start">
+          <input 
+            type="checkbox" 
+            id="run_all"
+            name="run_all" 
+            class="mt-1 h-4 w-4 text-primary-700 border-2 border-neutral-300 rounded focus:ring-primary-700 focus:border-primary-700"
+            aria-describedby="run-all-help"
+          />
+          <div class="ml-3">
+            <label for="run_all" class="text-sm font-medium text-neutral-900">
+              Run all scrapers in parallel
+            </label>
+            <p id="run-all-help" class="text-sm text-neutral-600 mt-1">
+              When checked, this will ignore the selected site above and run all available scrapers simultaneously. 
+              This is faster but may put more load on the target websites.
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Action Buttons -->
+      <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-neutral-200">
+        <button 
+          type="submit"
+          class="flex-1 sm:flex-none px-6 py-3 bg-primary-700 text-white font-medium rounded-lg hover:bg-primary-900 focus:bg-primary-900 focus:ring-4 focus:ring-primary-200 transition-colors duration-150">
+          <i class="bi bi-play-circle mr-2" aria-hidden="true"></i>Start Scraping
+        </button>
+        <a 
+          href="/"
+          class="flex-1 sm:flex-none px-6 py-3 bg-white border-2 border-neutral-300 text-neutral-700 font-medium rounded-lg hover:bg-neutral-50 focus:bg-neutral-50 text-center transition-colors duration-150">
+          <i class="bi bi-arrow-left mr-2" aria-hidden="true"></i>Back to Home
+        </a>
       </div>
     </form>
   </div>
+
+  <!-- Help Section -->
+  <div class="mt-8 bg-primary-50 rounded-lg border border-primary-200 p-6">
+    <div class="flex items-start">
+      <i class="bi bi-info-circle text-primary-700 text-xl mr-3 mt-0.5" aria-hidden="true"></i>
+      <div>
+        <h3 class="text-lg font-semibold text-primary-900 mb-2">How it works</h3>
+        <ul class="space-y-2 text-sm text-primary-800">
+          <li class="flex items-start">
+            <i class="bi bi-check2 mr-2 mt-0.5" aria-hidden="true"></i>
+            <span>The scraper fetches article listing pages from the selected news source</span>
+          </li>
+          <li class="flex items-start">
+            <i class="bi bi-check2 mr-2 mt-0.5" aria-hidden="true"></i>
+            <span>It then extracts individual article links and scrapes their content</span>
+          </li>
+          <li class="flex items-start">
+            <i class="bi bi-check2 mr-2 mt-0.5" aria-hidden="true"></i>
+            <span>Articles are automatically deduplicated to avoid storing duplicates</span>
+          </li>
+          <li class="flex items-start">
+            <i class="bi bi-check2 mr-2 mt-0.5" aria-hidden="true"></i>
+            <span>Progress updates appear on the home page in real-time</span>
+          </li>
+        </ul>
+        <p class="mt-4 text-sm text-primary-700">
+          <strong>Note:</strong> Scraping respects robots.txt and includes rate limiting to be respectful to target websites.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}

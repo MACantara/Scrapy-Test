@@ -1,39 +1,236 @@
 {% extends 'base.html' %}
-{% block title %}Home - Scraper Demo{% endblock %}
+{% block title %}Home - PH News Scraper{% endblock %}
 {% block content %}
-<div class="flex items-center justify-between mb-4">
-  <form method="get" action="/" class="flex gap-2">
-    <input name="q" value="{{ q or '' }}" placeholder="Search title or content" class="border rounded p-2" />
-    <button class="bg-blue-600 text-white px-3 py-2 rounded">Search</button>
-  </form>
-  <div>
-    <a href="/scrape" class="bg-gray-200 px-3 py-2 rounded">Run Scraper</a>
+
+<!-- Page Header with Search -->
+<div class="mb-8">
+  <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-bold text-neutral-900 mb-2">Latest News Articles</h1>
+      <p class="text-lg text-neutral-700">Stay updated with the latest news from Philippine sources</p>
+    </div>
+    
+    <!-- Search Form -->
+    <div class="lg:w-auto w-full">
+      <form method="get" action="/" class="flex flex-col sm:flex-row gap-2" role="search">
+        <label for="search" class="sr-only">Search articles</label>
+        <input 
+          id="search"
+          name="q" 
+          value="{{ q or '' }}" 
+          placeholder="Search title or content" 
+          class="flex-1 px-4 py-2 border-2 border-neutral-300 rounded-lg text-neutral-900 placeholder-neutral-500 focus:border-primary-700 focus:ring-0"
+          type="search"
+          autocomplete="off"
+        />
+        <button 
+          type="submit"
+          class="px-6 py-2 bg-primary-700 text-white font-medium rounded-lg hover:bg-primary-900 focus:bg-primary-900 transition-colors duration-150">
+          <i class="bi bi-search mr-2" aria-hidden="true"></i>Search
+        </button>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Quick Actions -->
+  <div class="mt-6 flex flex-wrap gap-3">
+    <a href="/scrape" 
+       class="inline-flex items-center px-4 py-2 bg-white border-2 border-primary-700 text-primary-700 font-medium rounded-lg hover:bg-primary-50 focus:bg-primary-50 transition-colors duration-150">
+      <i class="bi bi-play-circle mr-2" aria-hidden="true"></i>Run Scraper
+    </a>
+    <a href="/analytics" 
+       class="inline-flex items-center px-4 py-2 bg-white border-2 border-neutral-300 text-neutral-700 font-medium rounded-lg hover:bg-neutral-50 focus:bg-neutral-50 transition-colors duration-150">
+      <i class="bi bi-bar-chart mr-2" aria-hidden="true"></i>View Analytics
+    </a>
   </div>
 </div>
 
-  <div class="mb-4">
-  <h3 class="text-lg font-semibold mb-2">Scrape Progress</h3>
-  <!-- Responsive grid: 1 col mobile, 2 cols small, 3 cols md, 4 cols lg -->
-  <div id="scrape-progress" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+<!-- Scrape Progress Section -->
+<section class="mb-12" aria-labelledby="progress-heading">
+  <div class="flex items-center justify-between mb-6">
+    <h2 id="progress-heading" class="text-2xl font-bold text-neutral-900">Scrape Progress</h2>
+    <button 
+      onclick="fetchJobs()" 
+      class="px-3 py-2 text-sm bg-white border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 focus:bg-neutral-50"
+      aria-label="Refresh scrape progress">
+      <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Refresh
+    </button>
+  </div>
+  
+  <!-- Progress Grid with ARIA Live Region -->
+  <div 
+    id="scrape-progress" 
+    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+    aria-live="polite"
+    aria-label="Scraping job progress">
     {% if running_jobs %}
       {% for j in running_jobs %}
-        <div class="p-3 bg-white rounded shadow flex flex-col sm:flex-row justify-between items-start sm:items-center">
-          <div>
-            <div class="font-medium">{{ j.spider }}</div>
-            <div class="text-sm text-gray-500">Started: {{ j.started_at }}</div>
-          </div>
-          <div class="text-right mt-2 sm:mt-0">
-            <div class="text-sm">Status: {{ j.status }}</div>
-            <div class="text-sm">Items: {{ j.items_count or 0 }}</div>
+        <div class="bg-white rounded-lg border border-neutral-200 p-6 shadow-sm">
+          <div class="flex items-start justify-between">
+            <div class="flex-1">
+              <h3 class="font-semibold text-lg text-neutral-900 mb-2">{{ j.spider|title }}</h3>
+              <dl class="space-y-1 text-sm">
+                <div class="flex justify-between">
+                  <dt class="text-neutral-600">Status:</dt>
+                  <dd class="font-medium text-primary-700">{{ j.status|title }}</dd>
+                </div>
+                <div class="flex justify-between">
+                  <dt class="text-neutral-600">Items:</dt>
+                  <dd class="font-medium">{{ j.items_count or 0 }}</dd>
+                </div>
+                <div>
+                  <dt class="text-neutral-600">Started:</dt>
+                  <dd class="text-neutral-800">{{ j.started_at }}</dd>
+                </div>
+              </dl>
+            </div>
+            <div class="ml-4">
+              <div class="w-3 h-3 bg-primary-600 rounded-full animate-pulse" aria-hidden="true"></div>
+            </div>
           </div>
         </div>
       {% endfor %}
+    {% else %}
+      <div class="col-span-full bg-white rounded-lg border border-neutral-200 p-8 text-center">
+        <i class="bi bi-info-circle text-4xl text-neutral-400 mb-4" aria-hidden="true"></i>
+        <p class="text-neutral-600">No scraping jobs currently running</p>
+        <a href="/scrape" class="inline-block mt-4 text-primary-700 hover:text-primary-900 font-medium">
+          Start a new scrape →
+        </a>
+      </div>
     {% endif %}
   </div>
-</div>
+</section>
 
+<!-- Articles Section -->
+<section aria-labelledby="articles-heading">
+  <div class="flex items-center justify-between mb-6">
+    <h2 id="articles-heading" class="text-2xl font-bold text-neutral-900">
+      {% if q %}Search Results{% else %}Latest Articles{% endif %}
+    </h2>
+    {% if q %}
+      <a href="/" class="text-primary-700 hover:text-primary-900 font-medium">
+        <i class="bi bi-x-circle mr-1" aria-hidden="true"></i>Clear search
+      </a>
+    {% endif %}
+  </div>
+  
+  <div class="grid gap-6">
+    {% for a in articles %}
+      <article class="bg-white rounded-lg border border-neutral-200 p-6 shadow-sm hover:shadow-md transition-shadow duration-150">
+        <header class="mb-4">
+          <h3 class="text-xl font-semibold mb-2">
+            <a href="{{ a.url }}" 
+               target="_blank" 
+               rel="noopener noreferrer"
+               class="text-primary-700 hover:text-primary-900 focus:text-primary-900 hover:underline focus:underline"
+               aria-describedby="article-{{ loop.index }}-meta">
+              {{ a.title or '(no title)' }}
+              <i class="bi bi-box-arrow-up-right ml-1 text-sm" aria-hidden="true"></i>
+            </a>
+          </h3>
+          <div id="article-{{ loop.index }}-meta" class="flex flex-wrap items-center gap-4 text-sm text-neutral-600">
+            <span class="flex items-center">
+              <i class="bi bi-building mr-1" aria-hidden="true"></i>
+              <strong>Source:</strong> {{ a.source }}
+            </span>
+            {% if a.author %}
+              <span class="flex items-center">
+                <i class="bi bi-person mr-1" aria-hidden="true"></i>
+                <strong>Author:</strong> {{ a.author }}
+              </span>
+            {% endif %}
+            <span class="flex items-center">
+              <i class="bi bi-calendar mr-1" aria-hidden="true"></i>
+              <strong>Date:</strong> 
+              <time datetime="{{ a.date or a.created_at }}">{{ a.date or a.created_at }}</time>
+            </span>
+          </div>
+        </header>
+        
+        {% if a.description or a.content %}
+          <div class="text-neutral-700 leading-relaxed">
+            <p>{{ a.description or (a.content[:200] + '...') }}</p>
+          </div>
+        {% endif %}
+        
+        <footer class="mt-4 pt-4 border-t border-neutral-100">
+          <a href="{{ a.url }}" 
+             target="_blank" 
+             rel="noopener noreferrer"
+             class="inline-flex items-center text-primary-700 hover:text-primary-900 font-medium">
+            Read full article
+            <i class="bi bi-arrow-right ml-1" aria-hidden="true"></i>
+          </a>
+        </footer>
+      </article>
+    {% else %}
+      <div class="bg-white rounded-lg border border-neutral-200 p-12 text-center">
+        <i class="bi bi-newspaper text-6xl text-neutral-300 mb-4" aria-hidden="true"></i>
+        <h3 class="text-xl font-semibold text-neutral-900 mb-2">
+          {% if q %}No articles found{% else %}No articles yet{% endif %}
+        </h3>
+        <p class="text-neutral-600 mb-6">
+          {% if q %}
+            Try adjusting your search terms or <a href="/" class="text-primary-700 hover:text-primary-900">browse all articles</a>
+          {% else %}
+            Run the scraper to start collecting news articles
+          {% endif %}
+        </p>
+        {% if not q %}
+          <a href="/scrape" 
+             class="inline-flex items-center px-6 py-3 bg-primary-700 text-white font-medium rounded-lg hover:bg-primary-900 focus:bg-primary-900 transition-colors duration-150">
+            <i class="bi bi-play-circle mr-2" aria-hidden="true"></i>Run Scraper
+          </a>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- Pagination -->
+{% if pagination.pages > 1 %}
+  <nav aria-label="Article pagination" class="mt-8">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-2">
+        {% if pagination.has_prev %}
+          <a href="?page={{ pagination.prev_num }}{% if q %}&q={{ q }}{% endif %}" 
+             class="px-4 py-2 bg-white border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 focus:bg-neutral-50"
+             aria-label="Go to previous page">
+            <i class="bi bi-chevron-left mr-1" aria-hidden="true"></i>Previous
+          </a>
+        {% else %}
+          <span class="px-4 py-2 bg-neutral-100 border border-neutral-200 text-neutral-400 rounded-lg cursor-not-allowed">
+            <i class="bi bi-chevron-left mr-1" aria-hidden="true"></i>Previous
+          </span>
+        {% endif %}
+        
+        {% if pagination.has_next %}
+          <a href="?page={{ pagination.next_num }}{% if q %}&q={{ q }}{% endif %}" 
+             class="px-4 py-2 bg-white border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 focus:bg-neutral-50"
+             aria-label="Go to next page">
+            Next<i class="bi bi-chevron-right ml-1" aria-hidden="true"></i>
+          </a>
+        {% else %}
+          <span class="px-4 py-2 bg-neutral-100 border border-neutral-200 text-neutral-400 rounded-lg cursor-not-allowed">
+            Next<i class="bi bi-chevron-right ml-1" aria-hidden="true"></i>
+          </span>
+        {% endif %}
+      </div>
+      
+      <div class="text-sm text-neutral-600">
+        Page {{ pagination.page }} of {{ pagination.pages }}
+        ({{ pagination.total }} total articles)
+      </div>
+    </div>
+  </nav>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
 <script>
-// Poll the /api/jobs endpoint and update the Scrape Progress panel
+// Enhanced fetchJobs with accessibility improvements
 async function fetchJobs() {
   try {
     const res = await fetch('/api/jobs');
@@ -41,64 +238,70 @@ async function fetchJobs() {
     const jobs = await res.json();
     const container = document.getElementById('scrape-progress');
     if (!container) return;
+    
     if (!jobs || jobs.length === 0) {
-      container.innerHTML = '';
+      container.innerHTML = `
+        <div class="col-span-full bg-white rounded-lg border border-neutral-200 p-8 text-center">
+          <i class="bi bi-info-circle text-4xl text-neutral-400 mb-4" aria-hidden="true"></i>
+          <p class="text-neutral-600">No scraping jobs currently running</p>
+          <a href="/scrape" class="inline-block mt-4 text-primary-700 hover:text-primary-900 font-medium">
+            Start a new scrape →
+          </a>
+        </div>
+      `;
       return;
     }
+    
     container.innerHTML = jobs.map(j => {
       return `
-        <div class="p-3 bg-white rounded shadow flex flex-col sm:flex-row justify-between items-start sm:items-center">
-          <div>
-            <div class="font-medium">${j.spider}</div>
-            <div class="text-sm text-gray-500">Started: ${j.started_at || ''}</div>
-          </div>
-          <div class="text-right mt-2 sm:mt-0">
-            <div class="text-sm">Status: ${j.status}</div>
-            <div class="text-sm">Items: ${j.items_count || 0}</div>
+        <div class="bg-white rounded-lg border border-neutral-200 p-6 shadow-sm">
+          <div class="flex items-start justify-between">
+            <div class="flex-1">
+              <h3 class="font-semibold text-lg text-neutral-900 mb-2">${j.spider ? j.spider.charAt(0).toUpperCase() + j.spider.slice(1) : 'Unknown'}</h3>
+              <dl class="space-y-1 text-sm">
+                <div class="flex justify-between">
+                  <dt class="text-neutral-600">Status:</dt>
+                  <dd class="font-medium text-primary-700">${j.status ? j.status.charAt(0).toUpperCase() + j.status.slice(1) : 'Unknown'}</dd>
+                </div>
+                <div class="flex justify-between">
+                  <dt class="text-neutral-600">Items:</dt>
+                  <dd class="font-medium">${j.items_count || 0}</dd>
+                </div>
+                <div>
+                  <dt class="text-neutral-600">Started:</dt>
+                  <dd class="text-neutral-800">${j.started_at || 'Unknown'}</dd>
+                </div>
+              </dl>
+            </div>
+            <div class="ml-4">
+              <div class="w-3 h-3 bg-primary-600 rounded-full animate-pulse" aria-hidden="true"></div>
+            </div>
           </div>
         </div>
       `;
     }).join('');
   } catch (e) {
-    // ignore
+    console.log('Failed to fetch job updates:', e);
   }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
   const container = document.getElementById('scrape-progress');
   if (!container) return;
+  
   fetchJobs();
   setInterval(fetchJobs, 3000);
+  
+  // Announce updates to screen readers
+  const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.type === 'childList' && mutation.target === container) {
+        // Screen reader will automatically announce due to aria-live="polite"
+      }
+    });
+  });
+  
+  observer.observe(container, { childList: true, subtree: true });
 });
 </script>
-
-<div class="grid gap-4">
-  <h3 class="text-lg font-semibold mb-2">Latest Articles</h3>
-  {% for a in articles %}
-  <article class="bg-white p-4 rounded shadow">
-    <div class="flex justify-between items-start">
-      <h2 class="font-semibold text-lg"><a href="{{ a.url }}" target="_blank" class="text-blue-700">{{ a.title or '(no title)' }}</a></h2>
-      <div class="text-sm text-gray-500">{{ a.source }} • {{ a.date or a.created_at }}</div>
-    </div>
-    <p class="text-sm text-gray-700 mt-2">{{ a.description or (a.content[:200] + '...') }}</p>
-  </article>
-  {% else %}
-  <div class="p-4 bg-white rounded shadow">No articles yet. Run the scraper.</div>
-  {% endfor %}
-</div>
-
-<div class="mt-6">
-  {% if pagination.pages > 1 %}
-    <div class="flex gap-2">
-      {% if pagination.has_prev %}
-        <a class="px-3 py-1 bg-white rounded" href="?page={{ pagination.prev_num }}{% if q %}&q={{ q }}{% endif %}">Prev</a>
-      {% endif %}
-      <span class="px-3 py-1 bg-white rounded">Page {{ pagination.page }} / {{ pagination.pages }}</span>
-      {% if pagination.has_next %}
-        <a class="px-3 py-1 bg-white rounded" href="?page={{ pagination.next_num }}{% if q %}&q={{ q }}{% endif %}">Next</a>
-      {% endif %}
-    </div>
-  {% endif %}
-</div>
-
 {% endblock %}

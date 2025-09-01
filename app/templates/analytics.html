@@ -1,169 +1,493 @@
 {% extends 'base.html' %}
-{% block title %}Analytics{% endblock %}
+{% block title %}Analytics - PH News Scraper{% endblock %}
 {% block content %}
-<div class="bg-white p-6 rounded shadow">
-  <h1 class="text-xl font-semibold mb-4">Analytics</h1>
-  <div class="grid md:grid-cols-3 gap-4 mb-6">
-    <div class="p-4 bg-gray-50 rounded flex flex-col justify-between">
-      <div class="flex items-center gap-3">
-        <i class="bi bi-file-earmark-text text-2xl text-blue-600"></i>
-        <div>
-          <div class="text-sm text-gray-600">Total articles</div>
-          <div class="text-2xl font-bold">{{ total_articles }}</div>
+
+<div class="space-y-8">
+  <!-- Page Header -->
+  <div>
+    <h1 class="text-3xl font-bold text-neutral-900 mb-2">Analytics Dashboard</h1>
+    <p class="text-lg text-neutral-700">Overview of scraping activity and collected articles</p>
+  </div>
+
+  <!-- Key Metrics -->
+  <section aria-labelledby="metrics-heading">
+    <h2 id="metrics-heading" class="text-2xl font-bold text-neutral-900 mb-6">Key Metrics</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Total Articles -->
+      <div class="bg-white rounded-lg border border-neutral-200 p-6 shadow-sm">
+        <div class="flex items-center">
+          <div class="p-3 bg-primary-100 rounded-lg">
+            <i class="bi bi-file-earmark-text text-2xl text-primary-700" aria-hidden="true"></i>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-neutral-600">Total Articles</p>
+            <p class="text-3xl font-bold text-neutral-900">{{ total_articles }}</p>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="p-4 bg-gray-50 rounded flex flex-col justify-between">
-      <div class="flex items-center gap-3">
-        <i class="bi bi-gear-wide-connected text-2xl text-green-600"></i>
-        <div>
-          <div class="text-sm text-gray-600">Scrape jobs</div>
-          <div class="text-lg">Running: <span class="font-medium">{{ job_counts.running }}</span> &middot; Finished: <span class="font-medium">{{ job_counts.finished }}</span></div>
-          <div class="text-sm text-gray-500">Total: {{ job_counts.total }}</div>
+      <!-- Scrape Jobs -->
+      <div class="bg-white rounded-lg border border-neutral-200 p-6 shadow-sm">
+        <div class="flex items-center">
+          <div class="p-3 bg-success-100 rounded-lg">
+            <i class="bi bi-gear-wide-connected text-2xl text-success-800" aria-hidden="true"></i>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-neutral-600">Scrape Jobs</p>
+            <p class="text-lg font-bold text-neutral-900">
+              Running: <span class="text-primary-700">{{ job_counts.running }}</span> • 
+              Finished: <span class="text-success-800">{{ job_counts.finished }}</span>
+            </p>
+            <p class="text-sm text-neutral-500">Total: {{ job_counts.total }}</p>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="p-4 bg-gray-50 rounded">
-      <canvas id="jobsChart" height="120"></canvas>
-    </div>
-  </div>
-
-  <div class="grid md:grid-cols-3 gap-4 mb-6">
-    <div class="p-4 bg-gray-50 rounded">
-      <div class="text-sm text-gray-600">Scraping speed (avg)</div>
-      <div class="text-2xl font-bold">{{ scraping_stats.avg_per_hour|round(2) }} / hour</div>
-      <div class="text-sm text-gray-500">Overall average since first article</div>
-    </div>
-
-    <div class="p-4 bg-gray-50 rounded">
-      <div class="text-sm text-gray-600">Last 24 hours</div>
-      <div class="text-2xl font-bold">{{ scraping_stats.last_24h }} articles</div>
-      <div class="text-sm text-gray-500">~{{ scraping_stats.last_24h_per_hour|round(2) }} / hour</div>
-    </div>
-
-    <div class="p-4 bg-gray-50 rounded">
-      <div class="text-sm text-gray-600">Note</div>
-      <div class="text-sm text-gray-500">Rates are based on Article.created_at timestamps and may be affected by import/migration.</div>
-    </div>
-  </div>
-
-  <div class="mb-6">
-    <h2 class="font-semibold mb-2">Articles by source</h2>
-    <div class="p-4 bg-white rounded shadow">
-      <canvas id="sourceChart" height="100"></canvas>
-    </div>
-  </div>
-
-  <div class="grid md:grid-cols-2 gap-4">
-    <div class="p-4 bg-white rounded shadow">
-      <h3 class="font-semibold mb-3"><i class="bi bi-list-check mr-2"></i>Recent Jobs</h3>
-      <ul class="space-y-2">
-        {% for j in recent_jobs %}
-          <li class="flex justify-between items-center">
-            <div>
-              <div class="font-medium">Job {{ j.id }} &middot; {{ j.spider }}</div>
-              <div class="text-sm text-gray-500">Started: {{ j.started_at }}{% if j.finished_at %} • Finished: {{ j.finished_at }}{% endif %}</div>
-            </div>
-            <div class="text-right">
-              <div class="text-sm">{{ j.status|capitalize }}</div>
-              <div class="text-sm font-medium">{{ j.items_count or 0 }} items</div>
-            </div>
-          </li>
-        {% else %}
-          <li>No jobs yet</li>
-        {% endfor %}
-      </ul>
-    </div>
-
-    <div class="p-4 bg-white rounded shadow">
-      <h3 class="font-semibold mb-3"><i class="bi bi-newspaper mr-2"></i>Recent Articles</h3>
-      <ul class="space-y-2">
-        {% for a in recent_articles %}
-          <li>
-            <a href="{{ a.url }}" target="_blank" class="font-medium text-blue-700">{{ a.title or a.url }}</a>
-            <div class="text-sm text-gray-500">{{ a.source }} • {{ a.created_at }}</div>
-          </li>
-        {% else %}
-          <li>No articles yet</li>
-        {% endfor %}
-      </ul>
-    </div>
-  </div>
-  
-  <div class="mt-6 bg-white p-4 rounded shadow">
-    <h2 class="font-semibold mb-2">Per-spider scraping stats</h2>
-    {% if scraping_stats and scraping_stats.avg_per_hour is not none %}
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="text-left text-gray-600">
-              <th class="px-2 py-1">Spider / Source</th>
-              <th class="px-2 py-1">Total articles</th>
-              <th class="px-2 py-1">Avg / hour</th>
-              <th class="px-2 py-1">Last 24h</th>
-              <th class="px-2 py-1">Last 24h / hr</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for name, s in per_spider_stats.items() %}
-              <tr class="border-t">
-                <td class="px-2 py-1 font-medium">{{ name }}</td>
-                <td class="px-2 py-1">{{ s.total }}</td>
-                <td class="px-2 py-1">{{ s.avg_per_hour|round(2) }}</td>
-                <td class="px-2 py-1">{{ s.last_24h }}</td>
-                <td class="px-2 py-1">{{ s.last_24h_per_hour|round(2) }}</td>
+      <!-- Chart Container -->
+      <div class="bg-white rounded-lg border border-neutral-200 p-6 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <p class="text-sm font-medium text-neutral-600">Job Status Distribution</p>
+          <button 
+            onclick="toggleChartTable('jobs')" 
+            class="text-sm text-primary-700 hover:text-primary-900"
+            aria-label="Toggle between chart and data table view">
+            <i class="bi bi-table" aria-hidden="true"></i> Table
+          </button>
+        </div>
+        <div id="jobs-chart-container">
+          <canvas id="jobsChart" height="120" aria-label="Job status distribution chart"></canvas>
+        </div>
+        <div id="jobs-table-container" class="hidden">
+          <table class="w-full text-sm">
+            <caption class="sr-only">Job status distribution data</caption>
+            <thead>
+              <tr class="border-b">
+                <th class="text-left py-2">Status</th>
+                <th class="text-right py-2">Count</th>
               </tr>
-            {% else %}
-              <tr><td colspan="5">No per-spider data available</td></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="py-1">Running</td>
+                <td class="text-right py-1">{{ job_counts.running }}</td>
+              </tr>
+              <tr>
+                <td class="py-1">Finished</td>
+                <td class="text-right py-1">{{ job_counts.finished }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scraping Speed Metrics -->
+  <section aria-labelledby="speed-heading">
+    <h2 id="speed-heading" class="text-2xl font-bold text-neutral-900 mb-6">Scraping Performance</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-white rounded-lg border border-neutral-200 p-6 shadow-sm">
+        <div class="flex items-center">
+          <div class="p-3 bg-warning-100 rounded-lg">
+            <i class="bi bi-speedometer2 text-2xl text-warning-800" aria-hidden="true"></i>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-neutral-600">Average Speed</p>
+            <p class="text-2xl font-bold text-neutral-900">{{ scraping_stats.avg_per_hour|round(2) }}</p>
+            <p class="text-sm text-neutral-500">articles per hour</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg border border-neutral-200 p-6 shadow-sm">
+        <div class="flex items-center">
+          <div class="p-3 bg-primary-100 rounded-lg">
+            <i class="bi bi-clock-history text-2xl text-primary-700" aria-hidden="true"></i>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-neutral-600">Last 24 Hours</p>
+            <p class="text-2xl font-bold text-neutral-900">{{ scraping_stats.last_24h }}</p>
+            <p class="text-sm text-neutral-500">{{ scraping_stats.last_24h_per_hour|round(2) }} per hour</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg border border-neutral-200 p-6 shadow-sm">
+        <div class="flex items-center">
+          <div class="p-3 bg-neutral-100 rounded-lg">
+            <i class="bi bi-info-circle text-2xl text-neutral-600" aria-hidden="true"></i>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-neutral-600">Note</p>
+            <p class="text-sm text-neutral-500">Rates based on Article.created_at timestamps</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Charts Section -->
+  <section aria-labelledby="charts-heading">
+    <h2 id="charts-heading" class="text-2xl font-bold text-neutral-900 mb-6">Data Visualization</h2>
+    
+    <!-- Articles by Source -->
+    <div class="bg-white rounded-lg border border-neutral-200 p-6 shadow-sm mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-neutral-900">Articles by Source</h3>
+        <button 
+          onclick="toggleChartTable('source')" 
+          class="px-3 py-2 text-sm bg-neutral-100 text-neutral-700 rounded-lg hover:bg-neutral-200"
+          aria-label="Toggle between chart and data table view">
+          <i class="bi bi-table mr-1" aria-hidden="true"></i>View Table
+        </button>
+      </div>
+      
+      <div id="source-chart-container">
+        <canvas id="sourceChart" height="100" aria-label="Articles by source chart"></canvas>
+      </div>
+      
+      <div id="source-table-container" class="hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <caption class="sr-only">Articles count by news source</caption>
+            <thead>
+              <tr class="border-b border-neutral-200">
+                <th class="text-left py-3 px-2 font-medium text-neutral-900">Source</th>
+                <th class="text-right py-3 px-2 font-medium text-neutral-900">Articles</th>
+                <th class="text-right py-3 px-2 font-medium text-neutral-900">Percentage</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for source, count in source_data %}
+                <tr class="border-b border-neutral-100">
+                  <td class="py-2 px-2">{{ source }}</td>
+                  <td class="text-right py-2 px-2 font-medium">{{ count }}</td>
+                  <td class="text-right py-2 px-2">{{ ((count / total_articles) * 100)|round(1) }}%</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Data Tables Section -->
+  <section aria-labelledby="data-heading">
+    <h2 id="data-heading" class="text-2xl font-bold text-neutral-900 mb-6">Recent Activity</h2>
+    
+    <div class="grid lg:grid-cols-2 gap-6 mb-8">
+      <!-- Recent Jobs -->
+      <div class="bg-white rounded-lg border border-neutral-200 p-6 shadow-sm">
+        <h3 class="text-lg font-semibold text-neutral-900 mb-4">
+          <i class="bi bi-list-check mr-2" aria-hidden="true"></i>Recent Jobs
+        </h3>
+        
+        {% if recent_jobs %}
+          <div class="space-y-4">
+            {% for j in recent_jobs %}
+              <div class="border-b border-neutral-100 pb-4 last:border-b-0 last:pb-0">
+                <div class="flex justify-between items-start">
+                  <div class="flex-1">
+                    <p class="font-medium text-neutral-900">Job {{ j.id }} • {{ j.spider|title }}</p>
+                    <div class="text-sm text-neutral-600 space-y-1 mt-1">
+                      <p><strong>Started:</strong> {{ j.started_at }}</p>
+                      {% if j.finished_at %}
+                        <p><strong>Finished:</strong> {{ j.finished_at }}</p>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="text-right ml-4">
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                      {% if j.status == 'running' %}bg-primary-100 text-primary-800
+                      {% elif j.status == 'finished' %}bg-success-100 text-success-800
+                      {% else %}bg-neutral-100 text-neutral-800{% endif %}">
+                      {{ j.status|title }}
+                    </span>
+                    <p class="text-sm font-medium text-neutral-900 mt-1">{{ j.items_count or 0 }} items</p>
+                  </div>
+                </div>
+              </div>
             {% endfor %}
-          </tbody>
-        </table>
+          </div>
+        {% else %}
+          <p class="text-neutral-600 text-center py-8">No jobs yet</p>
+        {% endif %}
+      </div>
+
+      <!-- Recent Articles -->
+      <div class="bg-white rounded-lg border border-neutral-200 p-6 shadow-sm">
+        <h3 class="text-lg font-semibold text-neutral-900 mb-4">
+          <i class="bi bi-newspaper mr-2" aria-hidden="true"></i>Recent Articles
+        </h3>
+        
+        {% if recent_articles %}
+          <div class="space-y-4">
+            {% for a in recent_articles %}
+              <div class="border-b border-neutral-100 pb-4 last:border-b-0 last:pb-0">
+                <h4 class="font-medium">
+                  <a href="{{ a.url }}" 
+                     target="_blank" 
+                     rel="noopener noreferrer"
+                     class="text-primary-700 hover:text-primary-900 hover:underline">
+                    {{ a.title or a.url }}
+                    <i class="bi bi-box-arrow-up-right ml-1 text-xs" aria-hidden="true"></i>
+                  </a>
+                </h4>
+                <div class="text-sm text-neutral-600 mt-1">
+                  {{ a.source }} • <time datetime="{{ a.created_at }}">{{ a.created_at }}</time>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-neutral-600 text-center py-8">No articles yet</p>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+  <!-- Per-Spider Statistics -->
+  <section aria-labelledby="spider-stats-heading">
+    <h2 id="spider-stats-heading" class="text-2xl font-bold text-neutral-900 mb-6">Per-Spider Statistics</h2>
+    
+    {% if scraping_stats and scraping_stats.avg_per_hour is not none %}
+      <div class="bg-white rounded-lg border border-neutral-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <caption class="sr-only">Detailed scraping statistics by spider/source</caption>
+            <thead class="bg-neutral-50">
+              <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                  Spider / Source
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                  Total Articles
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                  Avg / Hour
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                  Last 24h
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                  Last 24h / Hr
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-neutral-200">
+              {% for name, s in per_spider_stats.items() %}
+                <tr class="hover:bg-neutral-50">
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                      <div class="flex-shrink-0 h-8 w-8">
+                        <div class="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center">
+                          <i class="bi bi-globe text-primary-700" aria-hidden="true"></i>
+                        </div>
+                      </div>
+                      <div class="ml-4">
+                        <div class="text-sm font-medium text-neutral-900">{{ name|title }}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-neutral-900">
+                    {{ s.total }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-neutral-500">
+                    {{ s.avg_per_hour|round(2) }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-neutral-500">
+                    {{ s.last_24h }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-neutral-500">
+                    {{ s.last_24h_per_hour|round(2) }}
+                  </td>
+                </tr>
+              {% else %}
+                <tr>
+                  <td colspan="5" class="px-6 py-8 text-center text-neutral-500">
+                    No per-spider data available
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
     {% else %}
-      <div class="text-sm text-gray-500">No scraping stats available.</div>
+      <div class="bg-white rounded-lg border border-neutral-200 p-8 text-center">
+        <i class="bi bi-info-circle text-4xl text-neutral-300 mb-4" aria-hidden="true"></i>
+        <p class="text-neutral-600">No scraping statistics available yet.</p>
+        <a href="/scrape" class="inline-block mt-4 text-primary-700 hover:text-primary-900 font-medium">
+          Run a scraper to generate statistics →
+        </a>
+      </div>
     {% endif %}
-  </div>
+  </section>
 </div>
+
 {% endblock %}
 
 {% block scripts %}
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Accessibility-enhanced Chart.js implementation
+document.addEventListener('DOMContentLoaded', function() {
+  // Data from Flask template
   const perSource = {{ source_counts|tojson }};
   const sourceLabels = {{ source_labels|tojson }};
-
-    const ctx = document.getElementById('sourceChart');
-    if (ctx) {
-      new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: sourceLabels,
-          datasets: [{
-            label: 'Articles',
-            data: perSource,
-            backgroundColor: sourceLabels.map((_, i) => `hsl(${(i*50)%360} 70% 60%)`),
-          }]
-        },
-        options: { responsive: true, plugins: { legend: { display: false } } }
-      });
-    }
-
   const jobCounts = {{ job_counts|tojson }};
-    const jctx = document.getElementById('jobsChart');
-    if (jctx) {
-      new Chart(jctx, {
-        type: 'doughnut',
-        data: {
-          labels: ['Running','Finished'],
-          datasets: [{
-            data: [jobCounts.running, jobCounts.finished],
-            backgroundColor: ['#10B981', '#3B82F6']
-          }]
+
+  // Chart.js default accessibility settings
+  Chart.defaults.plugins.legend.labels.usePointStyle = true;
+  Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+  Chart.defaults.plugins.tooltip.titleColor = 'white';
+  Chart.defaults.plugins.tooltip.bodyColor = 'white';
+
+  // Source Chart (Bar Chart)
+  const sourceCtx = document.getElementById('sourceChart');
+  if (sourceCtx && sourceLabels && perSource) {
+    const sourceChart = new Chart(sourceCtx, {
+      type: 'bar',
+      data: {
+        labels: sourceLabels,
+        datasets: [{
+          label: 'Articles',
+          data: perSource,
+          backgroundColor: sourceLabels.map((_, i) => {
+            // Use consistent, accessible colors
+            const colors = ['#1d4ed8', '#059669', '#dc2626', '#d97706', '#7c3aed', '#0891b2'];
+            return colors[i % colors.length];
+          }),
+          borderColor: sourceLabels.map((_, i) => {
+            const colors = ['#1e3a8a', '#047857', '#b91c1c', '#c2410c', '#6d28d9', '#0e7490'];
+            return colors[i % colors.length];
+          }),
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            backgroundColor: 'rgba(17, 24, 39, 0.95)',
+            titleColor: 'white',
+            bodyColor: 'white',
+            borderColor: '#374151',
+            borderWidth: 1
+          }
         },
-        options: { responsive: true }
-      });
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              precision: 0
+            }
+          }
+        },
+        // Accessibility
+        onHover: (event, activeElements) => {
+          sourceCtx.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
+        }
+      }
+    });
+    
+    // Add aria-label with current data
+    sourceCtx.setAttribute('aria-label', 
+      `Bar chart showing article counts: ${sourceLabels.map((label, i) => 
+        `${label}: ${perSource[i]} articles`).join(', ')}`
+    );
+  }
+
+  // Jobs Chart (Doughnut Chart)
+  const jobsCtx = document.getElementById('jobsChart');
+  if (jobsCtx && jobCounts) {
+    const jobsChart = new Chart(jobsCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Running', 'Finished'],
+        datasets: [{
+          data: [jobCounts.running, jobCounts.finished],
+          backgroundColor: ['#1d4ed8', '#059669'],
+          borderColor: ['#1e3a8a', '#047857'],
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              padding: 20,
+              usePointStyle: true
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(17, 24, 39, 0.95)',
+            titleColor: 'white',
+            bodyColor: 'white',
+            borderColor: '#374151',
+            borderWidth: 1
+          }
+        },
+        // Accessibility
+        onHover: (event, activeElements) => {
+          jobsCtx.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
+        }
+      }
+    });
+    
+    // Add aria-label with current data
+    jobsCtx.setAttribute('aria-label', 
+      `Doughnut chart showing job status: Running ${jobCounts.running}, Finished ${jobCounts.finished}`
+    );
+  }
+});
+
+// Toggle between chart and table views
+function toggleChartTable(type) {
+  const chartContainer = document.getElementById(`${type}-chart-container`);
+  const tableContainer = document.getElementById(`${type}-table-container`);
+  const button = event.target.closest('button');
+  
+  if (chartContainer && tableContainer && button) {
+    const isShowingChart = !chartContainer.classList.contains('hidden');
+    
+    if (isShowingChart) {
+      // Show table, hide chart
+      chartContainer.classList.add('hidden');
+      tableContainer.classList.remove('hidden');
+      button.innerHTML = '<i class="bi bi-bar-chart-fill mr-1" aria-hidden="true"></i>View Chart';
+      button.setAttribute('aria-label', 'Toggle to chart view');
+    } else {
+      // Show chart, hide table
+      chartContainer.classList.remove('hidden');
+      tableContainer.classList.add('hidden');
+      button.innerHTML = '<i class="bi bi-table mr-1" aria-hidden="true"></i>View Table';
+      button.setAttribute('aria-label', 'Toggle to table view');
     }
-  </script>
+  }
+}
+
+// Keyboard navigation for charts
+document.addEventListener('keydown', function(e) {
+  if (e.target.tagName === 'CANVAS' && (e.key === 'Enter' || e.key === ' ')) {
+    e.preventDefault();
+    // Find the toggle button for this chart
+    const container = e.target.closest('[id*="-chart-container"]');
+    if (container) {
+      const type = container.id.replace('-chart-container', '');
+      const button = document.querySelector(`button[onclick="toggleChartTable('${type}')"]`);
+      if (button) {
+        button.click();
+      }
+    }
+  }
+});
+</script>
 {% endblock %}
