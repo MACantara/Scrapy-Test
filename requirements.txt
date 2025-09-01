@@ -7,3 +7,4 @@ python-dotenv
 Flask-SQLAlchemy
 Scrapy
 mysql-connector-python
+scrapy-playwright
