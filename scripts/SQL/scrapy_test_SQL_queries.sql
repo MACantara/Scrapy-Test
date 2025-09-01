@@ -70,6 +70,6 @@ WHERE author IS NOT NULL
   
 -- Manila Bulletin Debugging
 SELECT * FROM article WHERE source = "manilabulletin" or source = "Manila Bulletin" ORDER BY id DESC;
-SELECT COUNT(*) FROM article WHERE source = "manilabulletin" OR source = "Manila Bulletin";
+SELECT COUNT(*) FROM article WHERE source LIKE "%manila%";
 SELECT * FROM article WHERE url = "https://mb.com.ph/2025/09/01/pdeg-p605-m-worth-of-shabu-seized-in-zamboanga-city-3-arrested";
 DELETE FROM article WHERE source = "manilabulletin" OR source = "Manila Bulletin";
