@@ -11,17 +11,18 @@
   </div>
 </div>
 
-<div class="mb-4">
+  <div class="mb-4">
   <h3 class="text-lg font-semibold mb-2">Scrape Progress</h3>
-  <div id="scrape-progress" class="grid gap-2">
+  <!-- Responsive grid: 1 col mobile, 2 cols small, 3 cols md, 4 cols lg -->
+  <div id="scrape-progress" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
     {% if running_jobs %}
       {% for j in running_jobs %}
-        <div class="p-3 bg-white rounded shadow flex justify-between items-center">
+        <div class="p-3 bg-white rounded shadow flex flex-col sm:flex-row justify-between items-start sm:items-center">
           <div>
             <div class="font-medium">{{ j.spider }}</div>
             <div class="text-sm text-gray-500">Started: {{ j.started_at }}</div>
           </div>
-          <div class="text-right">
+          <div class="text-right mt-2 sm:mt-0">
             <div class="text-sm">Status: {{ j.status }}</div>
             <div class="text-sm">Items: {{ j.items_count or 0 }}</div>
           </div>
@@ -46,12 +47,12 @@ async function fetchJobs() {
     }
     container.innerHTML = jobs.map(j => {
       return `
-        <div class="p-3 bg-white rounded shadow flex justify-between items-center">
+        <div class="p-3 bg-white rounded shadow flex flex-col sm:flex-row justify-between items-start sm:items-center">
           <div>
             <div class="font-medium">${j.spider}</div>
             <div class="text-sm text-gray-500">Started: ${j.started_at || ''}</div>
           </div>
-          <div class="text-right">
+          <div class="text-right mt-2 sm:mt-0">
             <div class="text-sm">Status: ${j.status}</div>
             <div class="text-sm">Items: ${j.items_count || 0}</div>
           </div>
