@@ -1,6 +1,6 @@
 SHOW TABLES;
-DROP TABLE article;
-DROP TABLE scrape_job;
+-- DROP TABLE article;
+-- DROP TABLE scrape_job;
 
 SELECT * FROM article;
 SELECT * FROM scrape_job;	
@@ -72,4 +72,10 @@ WHERE author IS NOT NULL
 SELECT * FROM article WHERE source LIKE "%bulletin%" ORDER BY id DESC;
 SELECT COUNT(*) FROM article WHERE source LIKE "%bulletin%";
 SELECT * FROM article WHERE url = "https://mb.com.ph/2025/09/01/pdeg-p605-m-worth-of-shabu-seized-in-zamboanga-city-3-arrested";
-DELETE FROM article WHERE source LIKE "%bulletin%";
+-- DELETE FROM article WHERE source LIKE "%bulletin%";
+
+-- Philstar Debugging
+SELECT * FROM article WHERE source LIKE "philstar" ORDER BY id DESC;
+SELECT COUNT(*) FROM article WHERE source LIKE "philstar";
+SELECT * FROM article WHERE url = "https://mb.com.ph/2025/09/01/pdeg-p605-m-worth-of-shabu-seized-in-zamboanga-city-3-arrested";
+-- DELETE FROM article WHERE source LIKE "philstar";
