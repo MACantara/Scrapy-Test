@@ -158,13 +158,34 @@
               </tr>
             </thead>
             <tbody>
-              {% for source, count in source_data %}
-                <tr class="border-b border-neutral-100">
-                  <td class="py-2 px-2">{{ source }}</td>
-                  <td class="text-right py-2 px-2 font-medium">{{ count }}</td>
-                  <td class="text-right py-2 px-2">{{ ((count / total_articles) * 100)|round(1) }}%</td>
+              {# Prefer server-provided source_data, but fall back to source_labels/source_counts used by charts #}
+              {% if source_data %}
+                {% for source, count in source_data %}
+                  <tr class="border-b border-neutral-100">
+                    <td class="py-2 px-2">{{ source }}</td>
+                    <td class="text-right py-2 px-2 font-medium">{{ count }}</td>
+                    <td class="text-right py-2 px-2">{{ ((count / total_articles) * 100)|round(1) }}%</td>
+                  </tr>
+                {% endfor %}
+              {% elif source_labels and source_counts %}
+                {% for i in range(source_labels|length) %}
+                  <tr class="border-b border-neutral-100">
+                    <td class="py-2 px-2">{{ source_labels[i] }}</td>
+                    <td class="text-right py-2 px-2 font-medium">{{ source_counts[i] }}</td>
+                    <td class="text-right py-2 px-2">
+                      {% if total_articles and total_articles > 0 %}
+                        {{ ((source_counts[i] / total_articles) * 100)|round(1) }}%
+                      {% else %}
+                        0.0%
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="3" class="py-4 text-center text-neutral-500">No source data available</td>
                 </tr>
-              {% endfor %}
+              {% endif %}
             </tbody>
           </table>
         </div>
