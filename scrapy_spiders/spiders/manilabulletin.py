@@ -270,5 +270,6 @@ class ManilaBulletinSpider(scrapy.Spider):
             'content': content,
             'author': author,
             'date': published_date,
+            'published_date': published_date,
             'source': 'Manila Bulletin'
         }

@@ -108,7 +108,6 @@ class PhilstarSpider(scrapy.Spider):
             'url': response.url,
             'content': content,
             'author': author,
-            # pipeline expects key 'date'
             'date': published_date,
             'published_date': published_date,
             'source': 'Philstar'
