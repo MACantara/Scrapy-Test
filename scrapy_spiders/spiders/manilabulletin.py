@@ -1,10 +1,15 @@
 import scrapy
 try:
     from scrapy_playwright.page import PageMethod
-    from scrapy_playwright.handler import PageCoroutine
-    from scrapy_playwright.request import PlaywrightRequest
+    # some versions of scrapy-playwright expose PlaywrightRequest, others expect
+    # you to set the 'playwright' meta on a normal scrapy.Request. Detect availability.
+    try:
+        from scrapy_playwright.request import PlaywrightRequest  # type: ignore
+    except Exception:
+        PlaywrightRequest = None
 except Exception:
-    # scrapy-playwright may not be installed in some environments; fall back gracefully
+    # scrapy-playwright not installed at all
+    PageMethod = None
     PlaywrightRequest = None
 from urllib.parse import urljoin
 from scrapy_spiders.db import url_exists, preload_existing_urls
@@ -46,7 +51,24 @@ class ManilaBulletinSpider(scrapy.Spider):
                 url = self.LISTING_URL
             else:
                 url = urljoin(self.LISTING_URL, f"?page={p}")
-            yield scrapy.Request(url, callback=self.parse_listing)
+            # Listings are client-side rendered; prefer Playwright so widgets load
+            listing_selectors = [
+                '.sw-list-a',
+                '.mb-top-headings',
+                '.widget-item-headline',
+                '.most-popular',
+                '#widget_1561',
+                '.sw-list-a a',
+            ]
+            # If PlaywrightRequest class is available use it; otherwise a normal
+            # scrapy.Request with meta={'playwright': True, 'playwright_page_methods': [...]}
+            if PageMethod:
+                pm = PageMethod(_wait_for_any_selector, listing_selectors, 8000)
+                meta = {'playwright': True, 'playwright_page_methods': [pm]}
+            else:
+                meta = {}
+            yield (PlaywrightRequest(url, callback=self.parse_listing, meta=meta, dont_filter=True)
+                   if PlaywrightRequest else scrapy.Request(url, callback=self.parse_listing, meta=meta))
 
         # categories
         categories = [
@@ -63,7 +85,20 @@ class ManilaBulletinSpider(scrapy.Spider):
                     url = cat
                 else:
                     url = f"{cat}?page={p}"
-                yield scrapy.Request(url, callback=self.parse_listing)
+                listing_selectors = [
+                    '.sw-list-a',
+                    '.mb-top-headings',
+                    '.widget-item-headline',
+                    '.most-popular',
+                    '.sw-list-a a',
+                ]
+                if PageMethod:
+                    pm = PageMethod(_wait_for_any_selector, listing_selectors, 8000)
+                    meta = {'playwright': True, 'playwright_page_methods': [pm]}
+                else:
+                    meta = {}
+                yield (PlaywrightRequest(url, callback=self.parse_listing, meta=meta, dont_filter=True)
+                       if PlaywrightRequest else scrapy.Request(url, callback=self.parse_listing, meta=meta))
 
     def parse_listing(self, response):
         """Parse ManilaBulletin listing page and extract article URLs"""
@@ -91,17 +126,14 @@ class ManilaBulletinSpider(scrapy.Spider):
         for link in links:
             if url_exists(link):
                 continue
-            if PlaywrightRequest:
-                # use a PageMethod with our async helper to wait for any of the selectors
+            # prefer Playwright if available
+            if PageMethod:
                 pm = PageMethod(_wait_for_any_selector, candidate_selectors, 8000)
-                yield PlaywrightRequest(
-                    link,
-                    callback=self.parse_article,
-                    meta={'playwright': True, 'playwright_page_methods': [pm]},
-                    dont_filter=True,
-                )
+                meta = {'playwright': True, 'playwright_page_methods': [pm]}
             else:
-                yield scrapy.Request(link, callback=self.parse_article)
+                meta = {}
+            yield (PlaywrightRequest(link, callback=self.parse_article, meta=meta, dont_filter=True)
+                   if PlaywrightRequest else scrapy.Request(link, callback=self.parse_article, meta=meta))
 
     def parse_article(self, response):
         """Parse individual ManilaBulletin article"""
