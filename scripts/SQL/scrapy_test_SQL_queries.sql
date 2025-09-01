@@ -3,9 +3,10 @@ DROP TABLE article;
 DROP TABLE scrape_job;
 
 SELECT * FROM article;
-SELECT * FROM scrape_job;
+SELECT * FROM scrape_job;	
 
 UPDATE scrape_job SET status = 'finished', finished_at = NOW() WHERE status = 'running';
+UPDATE scrape_job SET status = 'finished', finished_at = NOW() WHERE status = 'running' AND items_count = 0;
 
 SELECT COUNT(*) FROM article;
 
@@ -66,3 +67,8 @@ SET author = NULLIF(
 )
 WHERE author IS NOT NULL
   AND source = 'pna';
+  
+-- Manila Bulletin Debugging
+SELECT * FROM article WHERE source = "manilabulletin" ORDER BY id DESC;
+SELECT COUNT(*) FROM article WHERE source = "manilabulletin";
+SELECT * FROM article WHERE url = "https://mb.com.ph/2025/09/01/eo-creating-independent-commission-to-probe-dpwh-anomalies-being-finalizedpbbm";
