@@ -87,6 +87,31 @@ Notes:
 - Call `url_exists()` before scheduling article requests to avoid duplicates.
 - Keep `published_date` as a `date` object when possible; pipelines will handle DB persistence.
 
+## Scaffolding a new spider with the helper script
+
+A lightweight generator is included at `scripts/create_spider.py` to bootstrap a new spider file. It creates a ready-to-edit spider under `scrapy_spiders/spiders/<name>.py` using the same conventions as the examples above.
+
+Usage (from the project root, PowerShell example):
+
+```powershell
+# create a new spider named `mynews` with a listing URL and human-friendly source name
+python scripts/create_spider.py mynews --listing-url https://mynews.example/ --source "My News"
+
+# overwrite if file exists
+python scripts/create_spider.py mynews --listing-url https://mynews.example/ --source "My News" --force
+```
+
+What the script does:
+- Writes `scrapy_spiders/spiders/<name>.py` with a starter template (start_requests, parse_listing, parse_article).
+- Uses `preload_existing_urls()` in the spider `__init__` so the generated spider follows the project's dedup pattern.
+
+Next steps after running the script:
+- Open the generated file and customize selectors and normalization logic in `parse_listing` and `parse_article`.
+- Optionally register the spider with the runner by importing it in `scrapy_spiders/runner.py` and adding it to the `AVAILABLE` mapping.
+- For quick import-only tests (without creating DB engines), set `SKIP_DB_CREATE=1` in your environment before importing the spider.
+
+The generator is intentionally simple so you can tailor the selectors for each site; use the existing spiders as richer examples for complex extraction rules.
+
 ## Running a single spider
 From the project root you can use the packaged runner:
 
