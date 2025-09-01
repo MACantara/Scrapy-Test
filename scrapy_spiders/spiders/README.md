@@ -11,6 +11,8 @@ Each spider should yield simple dicts (or Scrapy Items) with the following keys 
 - `content` — article body (string)
 - `author` — string or `None`
 - `published_date` — `datetime.date` or `None` (ISO-parsable preferred)
+ - `date` — ISO 8601 datetime string or `None` (preferred key for pipelines)
+ - `published_date` — `datetime.date` or `None` (kept for backward compatibility; ISO-parsable preferred)
 - `source` — short source name (e.g. `Philstar`, `PNA`)
 
 Pipelines will map these keys into the Flask `Article` model.
