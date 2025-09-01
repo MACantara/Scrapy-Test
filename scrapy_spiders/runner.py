@@ -48,6 +48,14 @@ def main():
         "CONCURRENT_REQUESTS": 16,
         "ROBOTSTXT_OBEY": True,
         "DOWNLOAD_DELAY": 0.5,
+        # scrapy-playwright integration
+        "TWISTED_REACTOR": "twisted.internet.asyncioreactor.AsyncioSelectorReactor",
+        "DOWNLOAD_HANDLERS": {
+            "http": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+            "https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+        },
+        "PLAYWRIGHT_DEFAULT_NAVIGATION_TIMEOUT": 30000,
+        "PLAYWRIGHT_LAUNCH_OPTIONS": {"headless": True},
     }
     settings.setdict(custom, priority="cmdline")
     process = CrawlerProcess(settings)
